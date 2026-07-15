@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solar AI Race Dashboard</title>
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@500,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem; --space-5: 1.25rem;
+      --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
+      --space-20: 5rem; --space-24: 6rem;
+      --color-bg:#f7f6f2; --color-surface:#f9f8f5; --color-surface-2:#fbfbf9; --color-surface-offset:#f3f0ec;
+      --color-surface-dynamic:#e6e4df; --color-border:#d4d1ca; --color-divider:#dcd9d5;
+      --color-text:#28251d; --color-text-muted:#6c6a64; --color-text-faint:#999790; --color-text-inverse:#f9f8f4;
+      --color-primary:#01696f; --color-primary-hover:#0c4e54; --color-primary-highlight:#cedcd8;
+      --color-warning:#964219; --color-success:#437a22; --color-blue:#006494; --color-purple:#7a39bb; --color-gold:#d19900;
+      --radius-sm:.375rem; --radius-md:.75rem; --radius-lg:1rem; --radius-xl:1.25rem; --radius-full:9999px;
+      --shadow-sm:0 1px 2px oklch(0.2 0.01 80 / 0.06); --shadow-md:0 8px 24px oklch(0.2 0.01 80 / 0.10);
+      --shadow-lg:0 18px 40px oklch(0.2 0.01 80 / 0.14);
+      --transition:180ms cubic-bezier(0.16, 1, 0.3, 1);
+      --font-body:'Satoshi', 'Inter', sans-serif;
+      --font-display:'Cabinet Grotesk', 'Inter', sans-serif;
+    }
+    [data-theme="dark"] {
+      --color-bg:#171614; --color-surface:#1c1b19; --color-surface-2:#201f1d; --color-surface-offset:#1d1c1a;
+      --color-surface-dynamic:#2d2c2a; --color-border:#393836; --color-divider:#262523;
+      --color-text:#e4e0d7; --color-text-muted:#aba69a; --color-text-faint:#7d786f; --color-text-inverse:#1a1917;
+      --color-primary:#4f98a3; --color-primary-hover:#67aeb8; --color-primary-highlight:#313b3b;
+      --color-warning:#cf7a53; --color-success:#83bd61; --color-blue:#78a9d6; --color-purple:#b693e2; --color-gold:#e0ba52;
+      --shadow-sm:0 1px 2px oklch(0 0 0 / 0.18); --shadow-md:0 10px 26px oklch(0 0 0 / 0.26); --shadow-lg:0 20px 44px oklch(0 0 0 / 0.34);
+    }
+    *,:before,:after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;overflow:hidden;scroll-behavior:smooth}
+    body{font-family:var(--font-body);font-size:var(--text-base);background:var(--color-bg);color:var(--color-text);line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    a,button,input,select{font:inherit;color:inherit}
+    button{background:none;border:none;cursor:pointer}
+    img,svg,canvas{display:block;max-width:100%}
+    :focus-visible{outline:2px solid var(--color-primary);outline-offset:3px;border-radius:var(--radius-sm)}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .skip-link{position:absolute;left:var(--space-4);top:-3rem;background:var(--color-primary);color:var(--color-text-inverse);padding:var(--space-2) var(--space-3);border-radius:var(--radius-full);z-index:50}
+    .skip-link:focus{top:var(--space-4)}
+    .app-shell{display:grid;grid-template-columns:300px 1fr;height:100dvh}
+    .sidebar{grid-row:1/-1;overflow-y:auto;overscroll-behavior:contain;border-right:1px solid color-mix(in oklab,var(--color-text) 10%, transparent);background:linear-gradient(180deg,var(--color-surface),var(--color-surface-offset));padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)}
+    .brand{display:flex;align-items:center;gap:var(--space-3)}
+    .brand-mark{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,color-mix(in oklab,var(--color-primary) 84%, black), color-mix(in oklab,var(--color-blue) 58%, var(--color-primary)));display:grid;place-items:center;box-shadow:var(--shadow-md);color:var(--color-text-inverse)}
+    .brand h1{font-family:var(--font-display);font-size:var(--text-lg);letter-spacing:-0.03em}
+    .brand p{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:2px}
+    .nav-section-title{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.16em;color:var(--color-text-faint);margin-bottom:var(--space-2)}
+    .nav-list{display:flex;flex-direction:column;gap:var(--space-2)}
+    .nav-btn{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-radius:var(--radius-md);color:var(--color-text-muted);width:100%;text-align:left;transition:background var(--transition), color var(--transition), transform var(--transition)}
+    .nav-btn:hover,.nav-btn[aria-current="page"]{background:color-mix(in oklab,var(--color-primary) 12%, var(--color-surface-2));color:var(--color-text)}
+    .nav-btn[aria-current="page"]{box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--color-primary) 28%, transparent)}
+    .nav-icon{width:1.2rem;height:1.2rem;flex:0 0 auto}
+    .sidebar-card{padding:var(--space-4);border:1px solid color-mix(in oklab,var(--color-text) 10%, transparent);background:color-mix(in oklab,var(--color-surface-2) 76%, var(--color-primary) 4%);border-radius:var(--radius-lg);display:grid;gap:var(--space-2)}
+    .sidebar-card strong{font-size:var(--text-sm)}
+    .sidebar-card p{font-size:var(--text-xs);color:var(--color-text-muted);max-width:28ch}
+    .main-wrap{display:grid;grid-template-rows:auto 1fr;min-width:0}
+    .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);padding:var(--space-4) var(--space-6);border-bottom:1px solid color-mix(in oklab,var(--color-text) 8%, transparent);background:color-mix(in oklab,var(--color-bg) 78%, transparent);backdrop-filter:blur(18px)}
+    .search-chip{display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);border-radius:var(--radius-full);background:var(--color-surface);border:1px solid color-mix(in oklab,var(--color-text) 8%, transparent);font-size:var(--text-sm);color:var(--color-text-muted)}
+    .topbar-actions{display:flex;align-items:center;gap:var(--space-3)}
+    .icon-btn{width:44px;height:44px;border-radius:var(--radius-full);display:grid;place-items:center;background:var(--color-surface);border:1px solid color-mix(in oklab,var(--color-text) 8%, transparent);transition:transform var(--transition), background var(--transition)}
+    .icon-btn:hover{transform:translateY(-1px);background:var(--color-surface-2)}
+    .main{overflow-y:auto;overscroll-behavior:contain;padding:var(--space-6);display:grid;gap:var(--space-6)}
+    .hero{display:grid;grid-template-columns:1.4fr .9fr;gap:var(--space-6)}
+    .hero-panel,.panel{background:linear-gradient(180deg,color-mix(in oklab,var(--color-surface) 92%, var(--color-primary) 3%),var(--color-surface-2));border:1px solid color-mix(in oklab,var(--color-text) 8%, transparent);border-radius:var(--radius-xl);box-shadow:var(--shadow-sm)}
+    .hero-panel{padding:var(--space-8);display:grid;gap:var(--space-5);position:relative;overflow:hidden}
+    .hero-panel::after{content:"";position:absolute;inset:auto -8% -35% auto;width:320px;height:320px;background:radial-gradient(circle,color-mix(in oklab,var(--color-primary) 20%, transparent),transparent 64%);pointer-events:none}
+    .eyebrow{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.18em;color:var(--color-primary);font-weight:700}
+    .hero-title{font-family:var(--font-display);font-size:var(--text-xl);letter-spacing:-0.04em;max-width:18ch;line-height:1.02}
+    .hero-copy{max-width:58ch;color:var(--color-text-muted)}
+    .hero-actions{display:flex;flex-wrap:wrap;gap:var(--space-3)}
+    .btn{display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-3) var(--space-4);border-radius:var(--radius-full);font-size:var(--text-sm);font-weight:700;transition:transform var(--transition), background var(--transition), color var(--transition), border-color var(--transition);border:1px solid transparent}
+    .btn-primary{background:var(--color-primary);color:var(--color-text-inverse)}
+    .btn-primary:hover{background:var(--color-primary-hover);transform:translateY(-1px)}
+    .btn-secondary{background:var(--color-surface);border-color:color-mix(in oklab,var(--color-text) 10%, transparent)}
+    .btn-secondary:hover{background:var(--color-surface-offset)}
+    .signal-grid{display:grid;gap:var(--space-4);padding:var(--space-6)}
+    .signal-item{padding:var(--space-4);border-radius:var(--radius-lg);background:color-mix(in oklab,var(--color-surface-offset) 88%, var(--color-primary) 6%);border:1px solid color-mix(in oklab,var(--color-text) 8%, transparent)}
+    .signal-item strong{display:block;font-family:var(--font-display);font-size:var(--text-lg);letter-spacing:-0.03em}
+    .signal-item span{display:block;font-size:var(--text-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-faint);margin-bottom:var(--space-2)}
+    .signal-item p{font-size:var(--text-sm);color:var(--color-text-muted);max-width:24ch}
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-4)}
+    .kpi-card{padding:var(--space-5);display:grid;gap:var(--space-3)}
+    .kpi-card h3{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.14em;color:var(--color-text-faint)}
+    .kpi-value{font-family:var(--font-display);font-size:var(--text-xl);letter-spacing:-0.04em;font-variant-numeric:tabular-nums lining-nums}
+    .kpi-note{font-size:var(--text-sm);color:var(--color-text-muted);max-width:24ch}
+    .positive{color:var(--color-success)} .warning{color:var(--color-warning)} .blue{color:var(--color-blue)} .gold{color:var(--color-gold)}
+    .content-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:var(--space-6)}
+    .panel{padding:var(--space-5)}
+    .panel-header{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-4);margin-bottom:var(--space-5)}
+    .panel-header h2{font-size:var(--text-lg);font-family:var(--font-display);letter-spacing:-0.03em}
+    .panel-header p{font-size:var(--text-sm);color:var(--color-text-muted);max-width:52ch}
+    .chart-wrap{position:relative;height:320px}
+    .mini-note{font-size:var(--text-xs);color:var(--color-text-faint)}
+    .comparison-table{width:100%;border-collapse:collapse;font-size:var(--text-sm)}
+    .comparison-table th,.comparison-table td{padding:var(--space-3);vertical-align:top;border-top:1px solid color-mix(in oklab,var(--color-text) 8%, transparent);text-align:left}
+    .comparison-table th{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.12em;color:var(--color-text-faint);font-weight:700}
+    .chip{display:inline-flex;align-items:center;gap:var(--space-2);padding:.35rem .7rem;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:700;letter-spacing:.02em}
+    .chip.teal{background:color-mix(in oklab,var(--color-primary) 16%, transparent);color:var(--color-primary)}
+    .chip.orange{background:color-mix(in oklab,var(--color-warning) 16%, transparent);color:var(--color-warning)}
+    .chip.blue{background:color-mix(in oklab,var(--color-blue) 16%, transparent);color:var(--color-blue)}
+    .chip.green{background:color-mix(in oklab,var(--color-success) 16%, transparent);color:var(--color-success)}
+    .story-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-4)}
+    .story-card{padding:var(--space-5);border-radius:var(--radius-lg);background:color-mix(in oklab,var(--color-surface-offset) 88%, var(--color-primary) 3%);border:1px solid color-mix(in oklab,var(--color-text) 8%, transparent);display:grid;gap:var(--space-3)}
+    .story-card h3{font-size:var(--text-base)}
+    .story-card p,.story-card li{font-size:var(--text-sm);color:var(--color-text-muted)}
+    .story-card ul{padding-left:1rem;display:grid;gap:var(--space-2)}
+    .case-list{display:grid;gap:var(--space-3)}
+    .case-item{padding:var(--space-4);border-radius:var(--radius-lg);background:var(--color-surface-offset);border:1px solid color-mix(in oklab,var(--color-text) 8%, transparent);display:grid;gap:var(--space-2)}
+    .case-item header{display:flex;justify-content:space-between;gap:var(--space-4);align-items:flex-start}
+    .case-item h3{font-size:var(--text-base)}
+    .case-item p{font-size:var(--text-sm);color:var(--color-text-muted)}
+    .section{display:none;gap:var(--space-6)}
+    .section.active{display:grid}
+    .footer-note{font-size:var(--text-xs);color:var(--color-text-faint);padding-top:var(--space-2)}
+    .source-list{display:grid;gap:var(--space-2);font-size:var(--text-sm)}
+    .source-list a{color:var(--color-primary);text-decoration:none}
+    .source-list a:hover{text-decoration:underline}
+    .mobile-menu{display:none}
+    @media (max-width: 1100px){
+      .app-shell{grid-template-columns:88px 1fr}
+      .brand-copy,.sidebar .nav-btn span,.sidebar-card p,.sidebar-card strong,.nav-section-title{display:none}
+      .sidebar{padding:var(--space-4);align-items:center}
+      .nav-btn{justify-content:center;padding:var(--space-3)}
+      .sidebar-card{padding:var(--space-3);place-items:center}
+      .hero,.content-grid,.story-grid{grid-template-columns:1fr}
+      .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width: 768px){
+      html,body{overflow:auto}
+      .app-shell{display:block;height:auto}
+      .sidebar{display:none;position:fixed;inset:0 auto 0 0;width:min(85vw,320px);z-index:40;box-shadow:var(--shadow-lg)}
+      .sidebar.open{display:flex}
+      .main-wrap{min-height:100dvh}
+      .topbar{padding:var(--space-4)}
+      .mobile-menu{display:grid}
+      .main{padding:var(--space-4)}
+      .hero-panel,.signal-grid,.panel{padding:var(--space-4)}
+      .kpi-grid{grid-template-columns:1fr}
+      .topbar-actions .search-chip{display:none}
+      .comparison-table{display:block;overflow-x:auto;white-space:nowrap}
+      .hero-title{max-width:14ch}
+    }
+    @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-label="Solar AI Race logo">
+            <path d="M24 5v9"/>
+            <path d="M9 24h9"/>
+            <path d="M30 24h9"/>
+            <circle cx="24" cy="24" r="8"/>
+            <path d="M17.5 31.5 11 38"/>
+            <path d="M31 31.5 37.5 38"/>
+            <path d="M16.5 16.5 11 11"/>
+            <path d="M31.5 16.5 37 11"/>
+          </svg>
+        </div>
+        <div class="brand-copy">
+          <h1>Solar AI Race</h1>
+          <p>China vs. the United States</p>
+        </div>
+      </div>
+
+      <nav aria-label="Primary">
+        <div class="nav-section-title">Research views</div>
+        <div class="nav-list">
+          <button class="nav-btn" data-section="overview" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h8V3H3zM13 21h8v-6h-8zM13 3v8h8V3zM3 21h8v-6H3z"/></svg><span>Overview</span></button>
+          <button class="nav-btn" data-section="capacity"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4"/></svg><span>Solar scale</span></button>
+          <button class="nav-btn" data-section="reliability"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg><span>24-hour problem</span></button>
+          <button class="nav-btn" data-section="grid"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/><path d="M8 3v18M16 3v18"/></svg><span>Grid and policy</span></button>
+          <button class="nav-btn" data-section="projects"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg><span>Projects</span></button>
+          <button class="nav-btn" data-section="data"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19h16"/><path d="M4 15 9 10l4 4 7-8"/></svg><span>Scenario lab</span></button>
+          <button class="nav-btn" data-section="arguments"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 9l10 6 10-6-10-6Z"/><path d="m2 15 10 6 10-6"/></svg><span>Theses</span></button>
+          <button class="nav-btn" data-section="sources"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 0 4 24V4.5A2.5 2.5 0 0 1 6.5 2Z"/></svg><span>Sources</span></button>
+        </div>
+      </nav>
+
+      <div class="sidebar-card">
+        <strong>Editorial lens</strong>
+        <p>The decisive question is not who owns more solar panels. It is who can turn intermittent sunlight into dependable intelligence.</p>
+      </div>
+    </aside>
+
+    <div class="main-wrap">
+      <header class="topbar">
+        <div class="topbar-actions">
+          <button class="icon-btn mobile-menu" id="menuToggle" aria-label="Open navigation">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          </button>
+          <div>
+            <div class="search-chip">Research brief transformed into an interactive editorial dashboard</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="themeToggle" data-theme-toggle aria-label="Switch theme">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="main" id="main-content">
+        <section class="section active" id="section-overview">
+          <div class="hero">
+            <article class="hero-panel">
+              <div class="eyebrow">Research brief web app</div>
+              <h2 class="hero-title">Which country can turn intermittent sunlight into dependable intelligence?</h2>
+              <p class="hero-copy">This app converts the July 2026 research brief into a navigable evidence environment: headline metrics, structural bottlenecks, verified projects, and ranked article theses. The core finding is stark: neither country has solved solar-powered AI at 24-hour hyperscale, but they are failing in different ways.</p>
+              <div class="hero-actions">
+                <button class="btn btn-primary" data-jump="arguments">Open article theses</button>
+                <button class="btn btn-secondary" data-jump="projects">Browse case studies</button>
+              </div>
+              <p class="footer-note">Data window: current through July 2026. All metrics in this app are drawn from the prior research brief and cited source set.</p>
+            </article>
+            <aside class="hero-panel signal-grid" aria-label="Key signals">
+              <div class="signal-item">
+                <span>Headline gap</span>
+                <strong>~4.7×</strong>
+                <p>China's cumulative solar capacity relative to the United States by end-2025.</p>
+              </div>
+              <div class="signal-item">
+                <span>Hidden reality</span>
+                <strong>~70%</strong>
+                <p>Estimated share of Chinese AI data center electricity still supplied by coal in 2025.</p>
+              </div>
+              <div class="signal-item">
+                <span>American choke point</span>
+                <strong>2,300 GW</strong>
+                <p>Approximate U.S. interconnection queue backlog awaiting grid connection.</p>
+              </div>
+            </aside>
+          </div>
+
+          <div class="kpi-grid">
+            <article class="panel kpi-card">
+              <h3>China solar additions, 2025</h3>
+              <div class="kpi-value positive">315 GW</div>
+              <p class="kpi-note">A single year of Chinese additions exceeded total U.S. installed solar capacity only a few years ago.</p>
+            </article>
+            <article class="panel kpi-card">
+              <h3>U.S. solar additions, 2025</h3>
+              <div class="kpi-value blue">43 GW</div>
+              <p class="kpi-note">Still historically strong by U.S. standards, but far smaller than China's construction pace.</p>
+            </article>
+            <article class="panel kpi-card">
+              <h3>Global data center demand, 2024</h3>
+              <div class="kpi-value gold">415 TWh</div>
+              <p class="kpi-note">A large and rising base before full AI training and inference expansion arrives.</p>
+            </article>
+            <article class="panel kpi-card">
+              <h3>2030 demand projection</h3>
+              <div class="kpi-value warning">~945 TWh</div>
+              <p class="kpi-note">The IEA's directional warning: data center power demand is on track to more than double.</p>
+            </article>
+          </div>
+
+          <div class="content-grid">
+            <article class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Strategic split</h2>
+                  <p>China leads on solar manufacturing, deployment speed, and long-distance transmission. The United States leads on hyperscaler capital, advanced chips, and willingness to improvise with PPAs, vertical integration, nuclear, and gas.</p>
+                </div>
+                <span class="chip teal">Central tension</span>
+              </div>
+              <table class="comparison-table">
+                <thead>
+                  <tr><th>Dimension</th><th>China</th><th>United States</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Solar manufacturing</td><td>Dominant across polysilicon, wafers, cells, modules</td><td>Partial reshoring, still supply-chain exposed</td></tr>
+                  <tr><td>Transmission</td><td>UHV network already built at national scale</td><td>Permitting and interconnection are chronic delays</td></tr>
+                  <tr><td>AI power workaround</td><td>Coal-backed grid plus certificate accounting</td><td>Behind-the-meter gas, nuclear deals, PPAs</td></tr>
+                  <tr><td>Main weakness</td><td>Reliability and curtailment in western hubs</td><td>Grid delivery and transformer bottlenecks</td></tr>
+                </tbody>
+              </table>
+            </article>
+            <article class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>What this app makes legible</h2>
+                  <p>Readers can move from high-level metrics to concrete case studies without losing the article's core distinction between solar capacity and delivered 24-hour power.</p>
+                </div>
+              </div>
+              <div class="case-list">
+                <div class="case-item"><header><h3>Installed capacity is not delivered electricity</h3><span class="chip orange">Key distinction</span></header><p>Gigawatts of solar tell only part of the story. Curtailment, transmission losses, and nighttime gaps decide whether AI compute can actually run.</p></div>
+                <div class="case-item"><header><h3>Renewable matching is not hourly operation</h3><span class="chip blue">Terminology risk</span></header><p>Most “solar-powered AI” claims are annual accounting claims, not proof that the computers received solar power every hour.</p></div>
+                <div class="case-item"><header><h3>Inference is harder than training</h3><span class="chip green">Workload logic</span></header><p>Training can move in time and geography. Inference is always-on, user-facing, and therefore much less compatible with intermittent solar alone.</p></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="section-capacity">
+          <div class="content-grid">
+            <article class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Solar deployment scale</h2>
+                  <p>China's scale advantage is overwhelming in raw solar additions and cumulative capacity. The visual makes the asymmetry obvious, but the surrounding notes emphasize that more solar does not automatically mean more dependable AI power.</p>
+                </div>
+                <span class="chip teal">Capacity vs. delivery</span>
+              </div>
+              <div class="chart-wrap"><canvas id="solarCapacityChart" aria-label="Solar capacity comparison chart"></canvas></div>
+              <p class="mini-note">Values shown: cumulative solar capacity at end-2025 and annual additions in 2024 and 2025.</p>
+            </article>
+            <article class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Interpretation</h2>
+                  <p>The article should not stop at this chart. It is the setup, not the conclusion.</p>
+                </div>
+              </div>
+              <div class="case-list">
+                <div class="case-item"><header><h3>China's speed</h3><span class="chip green">Advantage</span></header><p>China added more solar in May 2025 alone than the United States added in the entire year 2025.</p></div>
+                <div class="case-item"><header><h3>Geographic mismatch</h3><span class="chip orange">Constraint</span></header><p>The richest Chinese solar resources are in western provinces, while much historic compute demand remains closer to eastern population and business centers.</p></div>
+                <div class="case-item"><header><h3>American exception zone</h3><span class="chip blue">Texas</span></header><p>Texas is the strongest U.S. overlap between solar growth and AI expansion, but Northern Virginia remains the country's most important data center cluster and a poor solar match.</p></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="section-reliability">
+          <div class="story-grid">
+            <article class="story-card">
+              <span class="chip orange">China</span>
+              <h3>Coal remains the silent baseload</h3>
+              <p>Even with the world's largest solar fleet, Chinese AI data centers were still estimated to run on roughly 70% coal power in 2025. The country's weakness is not panel supply. It is firm, hourly delivery.</p>
+              <ul>
+                <li>Renewable-rich western provinces still experience curtailment.</li>
+                <li>Green electricity certificates can overstate physical renewable delivery.</li>
+                <li>Grid operators remain cautious about running inflexible AI loads on intermittent supply.</li>
+              </ul>
+            </article>
+            <article class="story-card">
+              <span class="chip blue">United States</span>
+              <h3>Gas is becoming the speed solution</h3>
+              <p>When utilities and interconnection timelines cannot deliver power quickly enough, hyperscalers and AI developers are increasingly bypassing the grid with on-site or near-site gas.</p>
+              <ul>
+                <li>Behind-the-meter gas is fast compared with transmission build-out.</li>
+                <li>Nuclear and storage appear in the medium-term portfolio.</li>
+                <li>“Renewable AI” claims often coexist with fossil backup.</li>
+              </ul>
+            </article>
+            <article class="story-card">
+              <span class="chip teal">Bottom line</span>
+              <h3>Solar alone does not solve 2 AM</h3>
+              <p>The central article spine survives every cross-check: neither country can yet run next-generation AI clusters primarily on solar without large parallel investments in storage, transmission, and firm generation.</p>
+              <ul>
+                <li>Training can sometimes be shifted.</li>
+                <li>Inference is much harder to shift.</li>
+                <li>Battery deployments remain too short-duration for the full problem.</li>
+              </ul>
+            </article>
+          </div>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>How the “24-hour problem” is actually being solved</h2>
+                <p>These are not theoretical pathways. They are the real systems now supporting AI infrastructure in both countries.</p>
+              </div>
+            </div>
+            <table class="comparison-table">
+              <thead><tr><th>Problem</th><th>China's current answer</th><th>U.S. current answer</th></tr></thead>
+              <tbody>
+                <tr><td>Nighttime solar gap</td><td>Coal, hydro, grid balancing, limited storage</td><td>Grid mix, batteries, natural gas, some nuclear contracts</td></tr>
+                <tr><td>Seasonal variation</td><td>National planning and west-to-east transfers</td><td>Regional contracting, market procurement, private build-outs</td></tr>
+                <tr><td>Fast AI load growth</td><td>State-led hub construction and certificate mechanisms</td><td>Private capital, PPAs, vertical integration, behind-the-meter generation</td></tr>
+                <tr><td>Public narrative</td><td>Green-computing language can outrun hourly physics</td><td>100% clean claims often mean annual matching rather than hourly matching</td></tr>
+              </tbody>
+            </table>
+          </article>
+        </section>
+
+        <section class="section" id="section-grid">
+          <div class="content-grid">
+            <article class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Grid bottleneck comparison</h2>
+                  <p>China's main edge is not just solar modules. It is the ability to build long-distance transmission as a national system. The U.S. problem is less technological than institutional.</p>
+                </div>
+              </div>
+              <div class="chart-wrap"><canvas id="gridBottleneckChart" aria-label="Grid bottleneck comparison chart"></canvas></div>
+              <p class="mini-note">Illustrative indexed comparison based on research-brief findings: China scores higher on centralized transmission capability, while the U.S. shows far higher interconnection friction.</p>
+            </article>
+            <article class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Policy divergence after 2025</h2>
+                  <p>The two countries are now moving in opposite political directions on solar support, even as both intensify the AI race.</p>
+                </div>
+              </div>
+              <div class="case-list">
+                <div class="case-item"><header><h3>China</h3><span class="chip green">Coordinated</span></header><p>EDWC and green-computing mandates align data-center siting, renewable build-out, and transmission planning under a common industrial strategy.</p></div>
+                <div class="case-item"><header><h3>United States</h3><span class="chip orange">Fragmented</span></header><p>The IRA accelerated solar growth, but later federal reversals and the 2025 budget law sharply cut solar and wind incentive certainty while preserving nuclear and storage more favorably.</p></div>
+                <div class="case-item"><header><h3>Implication</h3><span class="chip teal">Strategic</span></header><p>The U.S. may still win specific compute races through capital intensity and chip access, yet lose the cleaner-power race because transmission and policy lag project ambition.</p></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="section-projects">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Case studies worth using in the eventual essay</h2>
+                <p>These projects are the most vivid bridge between abstract systems analysis and concrete reporting. The list distinguishes physical colocation, grid-connected procurement, and projects whose “solar-powered” label deserves skepticism.</p>
+              </div>
+            </div>
+            <div class="story-grid">
+              <div class="story-card">
+                <span class="chip blue">United States</span>
+                <h3>Google + Orion Solar Belt, Texas</h3>
+                <p>A strong example of very large clean-energy procurement, but still fundamentally a grid-delivered PPA story rather than a direct, hour-by-hour solar-to-server pipeline.</p>
+              </div>
+              <div class="story-card">
+                <span class="chip green">China</span>
+                <h3>Zhongjin Ulanqab, Inner Mongolia</h3>
+                <p>One of the most important Chinese benchmark projects because it combines renewable generation, storage, and computing in the same strategic geography.</p>
+              </div>
+              <div class="story-card">
+                <span class="chip orange">United States</span>
+                <h3>Stargate, Texas</h3>
+                <p>Essential because it reveals the tension between solar ambition and the practical turn toward gas-backed reliability at flagship AI campuses.</p>
+              </div>
+            </div>
+          </article>
+          <div class="content-grid">
+            <article class="panel">
+              <div class="panel-header"><div><h2>China projects</h2><p>Operational or credibly advanced examples where renewable rhetoric intersects with real compute infrastructure.</p></div></div>
+              <div class="case-list">
+                <div class="case-item"><header><h3>Zhongjin Ulanqab Computing Base</h3><span class="chip green">Operational</span></header><p>Direct green-electricity connection project using wind, solar, and storage in Inner Mongolia. It is among the strongest Chinese examples because it pushes toward physical integration, not just certificates.</p></div>
+                <div class="case-item"><header><h3>Tencent Huailai Dongyuan</h3><span class="chip teal">Operational</span></header><p>Microgrid design with wind, solar, and battery storage; notable because it reportedly covers a majority share of site demand rather than relying only on paper matching.</p></div>
+                <div class="case-item"><header><h3>Alibaba Zhangjiakou</h3><span class="chip blue">Active</span></header><p>A source-grid-load-storage configuration useful for explaining how Chinese firms are trying to stabilize renewable-heavy data center supply.</p></div>
+              </div>
+            </article>
+            <article class="panel">
+              <div class="panel-header"><div><h2>U.S. projects</h2><p>The strongest American examples usually mix solar with another reliability layer.</p></div></div>
+              <div class="case-list">
+                <div class="case-item"><header><h3>Google Texas solar procurement</h3><span class="chip blue">Operational</span></header><p>Excellent for showing scale, weak as proof of fully solar-delivered AI because the grid still mediates the power relationship.</p></div>
+                <div class="case-item"><header><h3>xAI Colossus + adjacent solar</h3><span class="chip orange">Hybrid reality</span></header><p>A vivid example of how a “solar” narrative can coexist with gas turbines and grid dependence at a rapidly scaled AI campus.</p></div>
+                <div class="case-item"><header><h3>Meta and other hyperscaler PPAs</h3><span class="chip teal">Portfolio model</span></header><p>Best used to explain how the American model bundles solar, wind, batteries, and increasingly nuclear instead of relying on solar-only architectures.</p></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="section-arguments">
+          <div class="story-grid">
+            <article class="story-card">
+              <span class="chip green">Strongest thesis</span>
+              <h3>The real race is for 2 AM power</h3>
+              <p>The strongest article thesis is that the decisive contest is not panel count but who can deliver reliable low-carbon power to AI clusters when the sun is down.</p>
+            </article>
+            <article class="story-card">
+              <span class="chip blue">China-ahead case</span>
+              <h3>State capacity plus solar scale</h3>
+              <p>China can align land, manufacturing, transmission, and compute siting faster than the United States. No other country has a comparable coordinated system.</p>
+            </article>
+            <article class="story-card">
+              <span class="chip orange">U.S.-ahead case</span>
+              <h3>Capital, chips, and improvisation</h3>
+              <p>The U.S. can compensate for grid weakness by spending heavily, locking up power contracts, and experimenting faster with private energy structures.</p>
+            </article>
+          </div>
+          <article class="panel">
+            <div class="panel-header"><div><h2>Ranked article theses</h2><p>These are adapted from the brief so an editor can see the strongest argumentative options at a glance.</p></div></div>
+            <div class="case-list">
+              <div class="case-item"><header><h3>1. The AI-solar race will be won at night, not noon</h3><span class="chip teal">Best</span></header><p>Whoever solves the intermittency-to-reliability problem first will gain the real strategic edge.</p></div>
+              <div class="case-item"><header><h3>2. China is winning the solar race while still losing the reliability race</h3><span class="chip green">Strong</span></header><p>Its deployment lead is real, but coal, curtailment, and distance still dominate the physical delivery picture.</p></div>
+              <div class="case-item"><header><h3>3. America's AI energy crisis is mostly a grid crisis</h3><span class="chip blue">Strong</span></header><p>The U.S. has capital and projects. It lacks timely connection, transmission, and transformer delivery.</p></div>
+              <div class="case-item"><header><h3>4. “Solar-powered AI” is often an accounting fiction</h3><span class="chip orange">Useful pivot</span></header><p>This thesis is excellent for a skeptical, language-focused piece about RECs, GECs, and annual matching.</p></div>
+              <div class="case-item"><header><h3>5. The true advantage may go to whoever combines solar with firm backup most intelligently</h3><span class="chip blue">Longer-range</span></header><p>This frames the race around portfolio design rather than ideology about any single energy source.</p></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="section" id="section-sources">
+          <article class="panel">
+            <div class="panel-header"><div><h2>Selected sources behind the research brief</h2><p>This app is based on the previously assembled report. These links surface the most important source categories for verification and follow-up reporting.</p></div></div>
+            <div class="source-list">
+              <a href="https://www.iea.org/reports/energy-and-ai/energy-demand-from-ai" target="_blank" rel="noopener noreferrer">IEA — Energy demand from AI</a>
+              <a href="https://www.eia.gov/todayinenergy/detail.php?id=65064" target="_blank" rel="noopener noreferrer">U.S. EIA — China's solar capacity installations grew rapidly in 2024</a>
+              <a href="https://seia.org/research-resources/us-solar-market-insight/" target="_blank" rel="noopener noreferrer">SEIA — U.S. Solar Market Insight</a>
+              <a href="https://jamestown.org/energy-and-ai-coordination-in-the-eastern-data-western-computing-plan/" target="_blank" rel="noopener noreferrer">Jamestown Foundation — EDWC strategy analysis</a>
+              <a href="https://energyanalysis.lbl.gov/publications/us-interconnection-queue-data-0" target="_blank" rel="noopener noreferrer">Lawrence Berkeley National Laboratory — U.S. Interconnection Queue Data</a>
+              <a href="https://www.reuters.com/sustainability/climate-energy/senate-bill-hastens-end-wind-solar-tax-credits-imposes-new-tax-2025-06-28/" target="_blank" rel="noopener noreferrer">Reuters — 2025 U.S. solar and wind tax credit changes</a>
+              <a href="https://www.tencent.com/en-us/articles/2202029.html" target="_blank" rel="noopener noreferrer">Tencent — Microgrid case study</a>
+              <a href="https://www.datacenterdynamics.com/en/news/solar-power-and-batteries-planned-for-openais-stargate-ai-data-center-campus-report/" target="_blank" rel="noopener noreferrer">Data Center Dynamics — Stargate solar and storage reporting</a>
+            </div>
+          </article>
+        </section>
+              <section class="section" id="section-data">
+          <div class="content-grid">
+            <article class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Scenario lab</h2>
+                  <p>This lightweight data layer lets readers test how three bottlenecks change the comparative picture: AI demand growth, storage build-out, and transmission progress. It does not forecast outcomes; it makes assumptions explicit.</p>
+                </div>
+                <span class="chip teal">Interactive model</span>
+              </div>
+              <div class="case-list">
+                <div class="case-item">
+                  <header><h3>Demand growth</h3><span class="chip blue">2030 load</span></header>
+                  <p>Higher growth raises the reliability penalty for both countries, but it hurts the United States more when interconnection remains slow.</p>
+                  <input id="demandRange" type="range" min="0" max="2" step="1" value="1" aria-label="Demand growth scenario" style="width:100%">
+                  <p class="mini-note">Scenario: <strong id="demandLabel">Base case</strong></p>
+                </div>
+                <div class="case-item">
+                  <header><h3>Storage build-out</h3><span class="chip green">Firming</span></header>
+                  <p>Battery and other storage reduce the nighttime mismatch, but current systems remain too short-duration to solve the full AI problem alone.</p>
+                  <input id="storageRange" type="range" min="0" max="2" step="1" value="1" aria-label="Storage scenario" style="width:100%">
+                  <p class="mini-note">Scenario: <strong id="storageLabel">Moderate</strong></p>
+                </div>
+                <div class="case-item">
+                  <header><h3>Transmission progress</h3><span class="chip orange">Grid delivery</span></header>
+                  <p>Transmission is the lever that most clearly separates the Chinese and U.S. systems. Better transmission changes solar from a paper asset into a delivered asset.</p>
+                  <input id="gridRange" type="range" min="0" max="2" step="1" value="1" aria-label="Transmission scenario" style="width:100%">
+                  <p class="mini-note">Scenario: <strong id="gridLabel">Partial improvement</strong></p>
+                </div>
+              </div>
+            </article>
+            <article class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Scenario output</h2>
+                  <p>The scorecard is intentionally simple: it shows relative positioning rather than pretending to deliver a false precision model.</p>
+                </div>
+              </div>
+              <div class="kpi-grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+                <article class="kpi-card" style="padding:0">
+                  <h3>China delivery score</h3>
+                  <div class="kpi-value positive" id="chinaScore">71</div>
+                  <p class="kpi-note">Composite measure of solar-to-compute delivery potential under the selected assumptions.</p>
+                </article>
+                <article class="kpi-card" style="padding:0">
+                  <h3>U.S. delivery score</h3>
+                  <div class="kpi-value blue" id="usScore">56</div>
+                  <p class="kpi-note">Private capital helps, but grid friction remains the decisive handicap in the base case.</p>
+                </article>
+                <article class="kpi-card" style="padding:0">
+                  <h3>China principal bottleneck</h3>
+                  <div class="kpi-note" id="chinaBottleneck">Hourly reliability still depends too heavily on coal, hydro balancing, and west-to-east delivery.</div>
+                </article>
+                <article class="kpi-card" style="padding:0">
+                  <h3>U.S. principal bottleneck</h3>
+                  <div class="kpi-note" id="usBottleneck">Interconnection and transmission delays keep solar abundance from reaching AI campuses fast enough.</div>
+                </article>
+              </div>
+              <div class="chart-wrap" style="height:280px;margin-top:var(--space-4)"><canvas id="scenarioChart" aria-label="Scenario comparison chart"></canvas></div>
+              <p class="mini-note" id="csv-status" style="margin-top:var(--space-3)">Loading data…</p>
+            </article>
+          </div>
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>AI data center demand trajectory</h2>
+                <p>Global, China, and U.S. electricity demand projections from <code>solar-demand.csv</code>. Edit the file to extend scenarios or revise the IEA baseline.</p>
+              </div>
+              <span class="chip blue">Demand model</span>
+            </div>
+            <div class="chart-wrap" style="height:320px"><canvas id="demandChart" aria-label="Demand trajectory chart"></canvas></div>
+            <p class="mini-note">Source: IEA Energy and AI (2025). 2030 base ~945 TWh globally. Post-2030 estimates highly uncertain.</p>
+          </article>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const sections = [...document.querySelectorAll('.section')];
+    const navButtons = [...document.querySelectorAll('.nav-btn')];
+    const jumpButtons = [...document.querySelectorAll('[data-jump]')];
+    const sidebar = document.getElementById('sidebar');
+    const menuToggle = document.getElementById('menuToggle');
+    const themeToggle = document.getElementById('themeToggle');
+    const root = document.documentElement;
+
+    function showSection(name){
+      sections.forEach(section => section.classList.toggle('active', section.id === `section-${name}`));
+      navButtons.forEach(btn => btn.setAttribute('aria-current', btn.dataset.section === name ? 'page' : 'false'));
+      if(window.innerWidth <= 768){ sidebar.classList.remove('open'); }
+      document.getElementById('main-content').scrollTop = 0;
+    }
+
+    navButtons.forEach(btn => btn.addEventListener('click', () => showSection(btn.dataset.section)));
+    jumpButtons.forEach(btn => btn.addEventListener('click', () => showSection(btn.dataset.jump)));
+    menuToggle?.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    let mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    root.setAttribute('data-theme', mode);
+    function syncThemeIcon(){
+      themeToggle.innerHTML = mode === 'dark'
+        ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+        : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+      themeToggle.setAttribute('aria-label', `Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`);
+    }
+    syncThemeIcon();
+    themeToggle.addEventListener('click', () => { mode = mode === 'dark' ? 'light' : 'dark'; root.setAttribute('data-theme', mode); syncThemeIcon(); updateCharts(); });
+
+    const chartPalette = () => {
+      const styles = getComputedStyle(document.documentElement);
+      return {
+        text: styles.getPropertyValue('--color-text').trim(),
+        muted: styles.getPropertyValue('--color-text-muted').trim(),
+        divider: styles.getPropertyValue('--color-divider').trim(),
+        primary: styles.getPropertyValue('--color-primary').trim(),
+        blue: styles.getPropertyValue('--color-blue').trim(),
+        warning: styles.getPropertyValue('--color-warning').trim(),
+        gold: styles.getPropertyValue('--color-gold').trim(),
+        success: styles.getPropertyValue('--color-success').trim()
+      };
+    };
+
+    let solarChart, gridChart, scenarioChart;
+    function buildCharts(){
+      const p = chartPalette();
+      const common = {
+        plugins:{legend:{labels:{color:p.text,font:{family:'Satoshi',size:12}}},tooltip:{backgroundColor:'rgba(15,15,15,.9)',titleFont:{family:'Satoshi'},bodyFont:{family:'Satoshi'}}},
+        scales:{x:{ticks:{color:p.muted,font:{family:'Satoshi'}},grid:{color:'transparent'}},y:{ticks:{color:p.muted,font:{family:'Satoshi'}},grid:{color:p.divider}}}
+      };
+      solarChart = new Chart(document.getElementById('solarCapacityChart'), {
+        type:'bar',
+        data:{labels:['China cumulative 2025','U.S. cumulative 2025','China additions 2024','China additions 2025','U.S. additions 2024','U.S. additions 2025'],datasets:[{label:'GW',data:[1300,279,277,315,50,43],backgroundColor:[p.primary,p.blue,p.success,p.gold,p.blue,p.warning],borderRadius:10,maxBarThickness:52}]},
+        options:{responsive:true,maintainAspectRatio:false,...common,plugins:{...common.plugins,legend:{display:false}},scales:{...common.scales,y:{...common.scales.y,beginAtZero:true,title:{display:true,text:'Gigawatts',color:p.muted,font:{family:'Satoshi'}}}}}
+      });
+      gridChart = new Chart(document.getElementById('gridBottleneckChart'), {
+        type:'radar',
+        data:{labels:['Transmission build speed','Central coordination','Grid delivery fit','Interconnection ease','Firm backup agility'],datasets:[{label:'China',data:[94,95,74,78,68],borderColor:p.primary,backgroundColor:'color-mix(in oklab, var(--color-primary) 18%, transparent)',pointBackgroundColor:p.primary},{label:'United States',data:[32,28,46,18,82],borderColor:p.warning,backgroundColor:'color-mix(in oklab, var(--color-warning) 18%, transparent)',pointBackgroundColor:p.warning}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:p.text,font:{family:'Satoshi',size:12}}}},scales:{r:{angleLines:{color:p.divider},grid:{color:p.divider},pointLabels:{color:p.muted,font:{family:'Satoshi',size:11}},ticks:{display:false,stepSize:20,suggestedMin:0,suggestedMax:100}}}}
+      });
+    }
+    function updateCharts(){ solarChart?.destroy(); gridChart?.destroy(); buildCharts(); }
+    // ── CSV DATA LAYER ──────────────────────────────────────────────────────
+    // All numbers come from the three companion CSVs. Edit those files to
+    // update any metric without touching this script.
+    // Files: solar-kpis.csv | solar-demand.csv | solar-scenarios.csv
+
+    function parseCSV(text){
+      const [header, ...rows] = text.trim().split('\n');
+      const keys = header.split(',').map(k => k.trim());
+      return rows.map(row => {
+        const vals = row.split(',').map(v => v.trim());
+        return Object.fromEntries(keys.map((k,i) => [k, vals[i]]));
+      });
+    }
+
+    function numOrStr(v){ const n = Number(v); return isNaN(n) || v==='' ? v : n; }
+
+    // ── Hardcoded fallback (matches CSV content exactly) ───────────────────
+    const FALLBACK = {
+      kpis: [
+        {metric:'Cumulative solar capacity',china_value:'1300',china_unit:'GW',us_value:'279',us_unit:'GW',note:'End-2025 estimates',source_year:'2025'},
+        {metric:'Annual solar additions 2025',china_value:'315',china_unit:'GW',us_value:'43',us_unit:'GW',note:'Full-year estimates',source_year:'2025'},
+        {metric:'Coal share of AI data center power',china_value:'70',china_unit:'%',us_value:'18',us_unit:'%',note:'Estimated 2025 share',source_year:'2025'},
+        {metric:'Delivery score baseline',china_value:'71',china_unit:'index',us_value:'56',us_unit:'index',note:'Composite 0-100 index',source_year:'2025'},
+      ],
+      demand: [
+        {year:'2024',global_twh_base:'415',china_twh:'220',us_twh:'270'},
+        {year:'2025',global_twh_base:'510',china_twh:'265',us_twh:'305'},
+        {year:'2026',global_twh_base:'610',china_twh:'320',us_twh:'350'},
+        {year:'2027',global_twh_base:'720',china_twh:'380',us_twh:'400'},
+        {year:'2028',global_twh_base:'830',china_twh:'440',us_twh:'455'},
+        {year:'2029',global_twh_base:'890',china_twh:'490',us_twh:'500'},
+        {year:'2030',global_twh_base:'945',china_twh:'530',us_twh:'545'},
+        {year:'2035',global_twh_base:'1300',china_twh:'680',us_twh:'700'},
+      ],
+      scenarios: [
+        {scenario_type:'demand',id:'0',label:'Conservative',china_delta:'+4',us_delta:'+5'},
+        {scenario_type:'demand',id:'1',label:'Base case',china_delta:'0',us_delta:'0'},
+        {scenario_type:'demand',id:'2',label:'High growth',china_delta:'-7',us_delta:'-10'},
+        {scenario_type:'storage',id:'0',label:'Thin build-out',china_delta:'-5',us_delta:'-6'},
+        {scenario_type:'storage',id:'1',label:'Moderate',china_delta:'0',us_delta:'0'},
+        {scenario_type:'storage',id:'2',label:'Aggressive',china_delta:'+8',us_delta:'+7'},
+        {scenario_type:'grid',id:'0',label:'Stalled',china_delta:'-3',us_delta:'-9'},
+        {scenario_type:'grid',id:'1',label:'Partial improvement',china_delta:'0',us_delta:'0'},
+        {scenario_type:'grid',id:'2',label:'Major improvement',china_delta:'+5',us_delta:'+11'},
+      ]
+    };
+
+    // ── Live application state (populated after CSV load) ──────────────────
+    let APP = { kpis: [], demand: [], scenarioData: { demand:[], storage:[], grid:[] }, baseScores: { china: 71, us: 56 } };
+
+    function buildScenarioData(rows){
+      const out = { demand:[], storage:[], grid:[] };
+      rows.forEach(r => {
+        if(!out[r.scenario_type]) return;
+        out[r.scenario_type].push({
+          label: r.label,
+          chinaDelta: parseInt(r.china_delta, 10),
+          usDelta: parseInt(r.us_delta, 10)
+        });
+      });
+      return out;
+    }
+
+    function applyKPIs(rows){
+      rows.forEach(r => {
+        if(r.metric === 'Delivery score baseline'){
+          APP.baseScores.china = Number(r.china_value);
+          APP.baseScores.us = Number(r.us_value);
+        }
+      });
+      // Update KPI card display values from CSV
+      const kpiMap = {
+        'Cumulative solar capacity': ['kpi-china-cap', 'kpi-us-cap'],
+        'Annual solar additions 2025': ['kpi-china-add', 'kpi-us-add'],
+      };
+      rows.forEach(r => {
+        if(kpiMap[r.metric]){
+          const [cid, uid] = kpiMap[r.metric];
+          const ce = document.getElementById(cid);
+          const ue = document.getElementById(uid);
+          if(ce) ce.textContent = r.china_value + ' ' + r.china_unit;
+          if(ue) ue.textContent = r.us_value + ' ' + r.us_unit;
+        }
+      });
+    }
+
+    function tryFetch(url){ return fetch(url).then(r => { if(!r.ok) throw new Error(r.status); return r.text(); }); }
+
+    async function loadCSVData(){
+      try {
+        const [kpiText, demandText, scenText] = await Promise.all([
+          tryFetch('./solar-kpis.csv'),
+          tryFetch('./solar-demand.csv'),
+          tryFetch('./solar-scenarios.csv')
+        ]);
+        APP.kpis = parseCSV(kpiText);
+        APP.demand = parseCSV(demandText);
+        APP.scenarioData = buildScenarioData(parseCSV(scenText));
+        document.getElementById('csv-status').textContent = 'Live — data loaded from CSV files';
+        document.getElementById('csv-status').style.color = 'var(--color-success)';
+      } catch(e) {
+        APP.kpis = FALLBACK.kpis;
+        APP.demand = FALLBACK.demand;
+        APP.scenarioData = buildScenarioData(FALLBACK.scenarios);
+        document.getElementById('csv-status').textContent = 'Fallback — edit CSVs and re-open with a local server to use live data';
+        document.getElementById('csv-status').style.color = 'var(--color-warning)';
+      }
+      applyKPIs(APP.kpis);
+      buildCharts();
+      buildDemandChart();
+      buildScenarioChart();
+      computeScenario();
+    }
+
+    // ── Scenario data accessor (replaces old hardcoded const) ──────────────
+    const scenarioData = new Proxy({}, { get(_, k){ return APP.scenarioData[k]; } });
+    const baseScores = new Proxy({}, { get(_, k){ return APP.baseScores[k]; } });
+    const demandRange = document.getElementById('demandRange');
+    const storageRange = document.getElementById('storageRange');
+    const gridRange = document.getElementById('gridRange');
+    const demandLabel = document.getElementById('demandLabel');
+    const storageLabel = document.getElementById('storageLabel');
+    const gridLabel = document.getElementById('gridLabel');
+    const chinaScoreEl = document.getElementById('chinaScore');
+    const usScoreEl = document.getElementById('usScore');
+    const chinaBottleneckEl = document.getElementById('chinaBottleneck');
+    const usBottleneckEl = document.getElementById('usBottleneck');
+
+    function scenarioSummary(score, country){
+      if(country === 'china'){
+        if(score >= 78) return 'Transmission and storage gains narrow the nighttime gap, but coal displacement is still incomplete.';
+        if(score >= 68) return 'Hourly reliability still depends too heavily on coal, hydro balancing, and west-to-east delivery.';
+        return 'Rapid AI load growth overwhelms the clean-power advantage unless firm backup expands much faster.';
+      }
+      if(score >= 66) return 'Grid reforms and storage materially improve solar delivery, but localized congestion can still slow large AI clusters.';
+      if(score >= 54) return 'Interconnection and transmission delays keep solar abundance from reaching AI campuses fast enough.';
+      return 'Without faster grid build-out, private capital defaults to gas and undermines the solar narrative.';
+    }
+
+    function computeScenario(){
+      const d = scenarioData.demand[Number(demandRange.value)];
+      const s = scenarioData.storage[Number(storageRange.value)];
+      const g = scenarioData.grid[Number(gridRange.value)];
+      demandLabel.textContent = d.label;
+      storageLabel.textContent = s.label;
+      gridLabel.textContent = g.label;
+      const china = baseScores.china + d.chinaDelta + s.chinaDelta + g.chinaDelta;
+      const us = baseScores.us + d.usDelta + s.usDelta + g.usDelta;
+      chinaScoreEl.textContent = String(china);
+      usScoreEl.textContent = String(us);
+      chinaBottleneckEl.textContent = scenarioSummary(china, 'china');
+      usBottleneckEl.textContent = scenarioSummary(us, 'us');
+      if(scenarioChart){
+        scenarioChart.data.datasets[0].data = [china, us];
+        scenarioChart.update();
+      }
+    }
+
+    function buildScenarioChart(){
+      const p = chartPalette();
+      scenarioChart = new Chart(document.getElementById('scenarioChart'), {
+        type:'bar',
+        data:{labels:['China','United States'],datasets:[{label:'Delivery score',data:[71,56],backgroundColor:[p.primary,p.warning],borderRadius:12,maxBarThickness:70}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(15,15,15,.9)',titleFont:{family:'Satoshi'},bodyFont:{family:'Satoshi'}}},scales:{x:{ticks:{color:p.muted,font:{family:'Satoshi'}},grid:{display:false}},y:{beginAtZero:true,max:100,ticks:{color:p.muted,font:{family:'Satoshi'}},grid:{color:p.divider}}}}
+      });
+    }
+
+    let demandChart;
+    function buildDemandChart(){
+      const p = chartPalette();
+      const rows = APP.demand;
+      const labels = rows.map(r => r.year);
+      const global = rows.map(r => Number(r.global_twh_base));
+      const china = rows.map(r => Number(r.china_twh));
+      const us = rows.map(r => Number(r.us_twh));
+      demandChart = new Chart(document.getElementById('demandChart'), {
+        type:'line',
+        data:{labels,datasets:[
+          {label:'Global (base)',data:global,borderColor:p.primary,backgroundColor:'transparent',tension:.4,pointRadius:4,pointBackgroundColor:p.primary,borderWidth:2},
+          {label:'China',data:china,borderColor:p.success,backgroundColor:'transparent',tension:.4,pointRadius:4,pointBackgroundColor:p.success,borderDash:[5,3],borderWidth:2},
+          {label:'United States',data:us,borderColor:p.warning,backgroundColor:'transparent',tension:.4,pointRadius:4,pointBackgroundColor:p.warning,borderDash:[5,3],borderWidth:2}
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{labels:{color:p.text,font:{family:'Satoshi',size:12}}},tooltip:{backgroundColor:'rgba(15,15,15,.9)',titleFont:{family:'Satoshi'},bodyFont:{family:'Satoshi'}}},
+          scales:{
+            x:{ticks:{color:p.muted,font:{family:'Satoshi'}},grid:{color:'transparent'}},
+            y:{beginAtZero:false,ticks:{color:p.muted,font:{family:'Satoshi'},callback:v=>v+' TWh'},grid:{color:p.divider},title:{display:true,text:'Electricity (TWh)',color:p.muted,font:{family:'Satoshi'}}}
+          }
+        }
+      });
+    }
+    function updateCharts(){ solarChart?.destroy(); gridChart?.destroy(); scenarioChart?.destroy(); demandChart?.destroy(); buildCharts(); buildDemandChart(); buildScenarioChart(); computeScenario(); }
+    [demandRange, storageRange, gridRange].forEach(el => el && el.addEventListener('input', computeScenario));
+    window.addEventListener('load', loadCSVData);
+  </script>
+</body>
+</html>
